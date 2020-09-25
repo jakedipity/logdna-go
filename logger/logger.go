@@ -2,21 +2,21 @@ package logger
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/joho/godotenv"
 )
 
 // Logger is the means by which a user can begin to send logs.
 type Logger struct {
-	Options Options
-
+	Options   Options
 	transport *transport
 }
 
 // Message represents a single log message and associated options.
 type Message struct {
-	Body    string
-	Options Options
+	Body           string
+	MessageOptions MessageOptions
 }
 
 // Payload contains the properties sent to the ingestion endpoint.
@@ -84,25 +84,26 @@ func (l *Logger) Close() {
 
 // Log sends a provided log message to LogDNA.
 func (l *Logger) Log(message string) {
+	msgOpts := MessageOptions{l.Options, time.Now()}
 	logMsg := Message{
-		Body:    message,
-		Options: l.Options,
+		Body:           message,
+		MessageOptions: msgOpts,
 	}
 	l.transport.add(logMsg)
 }
 
 // LogWithOptions allows the user to update options uniquely for a given log message
 // before sending the log to LogDNA.
-func (l *Logger) LogWithOptions(message string, options Options) error {
-	msgOpts := l.Options.merge(options)
+func (l *Logger) LogWithOptions(message string, options MessageOptions) error {
+	msgOpts := l.Options.merge(options.Options)
 	err := msgOpts.validate()
 	if err != nil {
 		return err
 	}
 
 	logMsg := Message{
-		Body:    message,
-		Options: msgOpts,
+		Body:           message,
+		MessageOptions: MessageOptions{msgOpts, time.Now()},
 	}
 
 	l.transport.add(logMsg)
@@ -111,7 +112,7 @@ func (l *Logger) LogWithOptions(message string, options Options) error {
 
 // LogWithLevel sends a log message to LogDNA with a parameterized level.
 func (l *Logger) LogWithLevel(message string, level string) error {
-	options := Options{Level: level}
+	options := MessageOptions{Options{Level: level}, time.Now()}
 	return l.LogWithOptions(message, options)
 }
 

@@ -58,7 +58,7 @@ func TestLogger_Log(t *testing.T) {
 		Hostname:   "foo",
 		App:        "test",
 		IPAddress:  "127.0.0.1",
-		MacAddress: "C0:FF:EE:C0:FF:EE",
+		MacAddress: "c0:ff:ee:c0:ff:ee",
 	}
 
 	l, err := NewLogger(o, "abc123")
@@ -103,17 +103,13 @@ func TestLogger_LogWithOptions(t *testing.T) {
 			App:       "app",
 			Env:       "development",
 			Level:     "info",
-			Timestamp: now,
 		}
 
 		l, err := NewLogger(o, "abc123")
 		assert.Equal(t, nil, err)
 
-		l.LogWithOptions("testing", Options{
-			App:   "anotherapp",
-			Env:   "production",
-			Level: "error",
-		})
+		options := Options{App: "anotherapp", Env: "production", Level: "error"}
+		l.LogWithOptions("testing", MessageOptions{options, time.Now()})
 		l.Close()
 
 		assert.NotEmpty(t, body)
@@ -139,8 +135,8 @@ func TestLogger_LogWithOptions(t *testing.T) {
 		l, err := NewLogger(o, "abc123")
 		assert.Equal(t, nil, err)
 
-		err = l.LogWithOptions("testing", Options{
-			App: strings.Repeat("a", 83),
+		err = l.LogWithOptions("testing", MessageOptions{
+			Options{App: strings.Repeat("a", 83)}, time.Now(),
 		})
 
 		assert.Error(t, err)

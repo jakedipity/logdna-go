@@ -22,8 +22,7 @@ type InvalidOptionMessage struct {
 	Message string
 }
 
-// Options encapsulates user-provided options such as the Level and App
-// that are passed along with each log.
+// Options encapsulates user-provided options.
 type Options struct {
 	App           string
 	Env           string
@@ -38,7 +37,13 @@ type Options struct {
 	MaxBufferLen  int
 	Meta          string
 	Tags          string
-	Timestamp     time.Time
+}
+
+// MessageOptions encapsulates user-provided options such as the Level and App
+// that are passed along with each log.
+type MessageOptions struct {
+	Options
+	Timestamp time.Time
 }
 
 type fieldIssue struct {
@@ -67,7 +72,8 @@ func validateOptionLength(option string, value string) *fieldIssue {
 }
 
 func (options *Options) validate() error {
-	reHostname := regexp.MustCompile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]*[A-Za-z0-9])$`)
+	reHostname := regexp.MustCompile(`(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]*[A-Za-z0-9])`)
+
 	var issues []fieldIssue
 
 	if issue := validateOptionLength("App", options.App); issue != nil {
@@ -118,10 +124,8 @@ func (options Options) merge(merge Options) Options {
 	if merge.Meta != "" {
 		newOpts.Meta = merge.Meta
 	}
-
 	return newOpts
 }
-
 func (options *Options) setDefaults() {
 	if options.SendTimeout == 0 {
 		options.SendTimeout = defaultSendTimeout

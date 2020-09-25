@@ -81,8 +81,6 @@ func (t *transport) flushSend() {
 
 	t.wg.Add(1)
 	go func() {
-		// TODO(mdeltito): in the future a retry should be triggered
-		// with the msgs pulled out of the buffer
 		t.send(msgs)
 		t.wg.Done()
 	}()
@@ -93,21 +91,18 @@ func (t *transport) send(msgs []Message) error {
 	for _, msg := range msgs {
 		line := Line{
 			Body:  msg.Body,
-			App:   msg.Options.App,
-			Env:   msg.Options.Env,
-			Level: msg.Options.Level,
+			App:   msg.MessageOptions.Options.App,
+			Env:   msg.MessageOptions.Options.Env,
+			Level: msg.MessageOptions.Options.Level,
 		}
 
-		timestamp := msg.Options.Timestamp
-		if timestamp.IsZero() {
-			timestamp = time.Now()
-		}
+		timestamp := msg.MessageOptions.Timestamp
 		line.Timestamp = timestamp.UnixNano() / int64(time.Millisecond)
 
-		if msg.Options.Meta != "" {
+		if msg.MessageOptions.Options.Meta != "" {
 			line.Meta = metaEnvelope{
-				indexed: msg.Options.IndexMeta,
-				meta:    msg.Options.Meta,
+				indexed: msg.MessageOptions.Options.IndexMeta,
+				meta:    msg.MessageOptions.Options.Meta,
 			}
 		}
 
@@ -143,12 +138,6 @@ func (t *transport) send(msgs []Message) error {
 
 	if resp.StatusCode >= 500 {
 		return fmt.Errorf("Server error: %d", resp.StatusCode)
-	}
-
-	var apiresp ingestAPIResponse
-	err = json.NewDecoder(resp.Body).Decode(&apiresp)
-	if err != nil {
-		return err
 	}
 
 	return nil
